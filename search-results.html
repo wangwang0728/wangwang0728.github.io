@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>搜索结果 - 福安家常菜馆</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/fuanfan.css">
+    <link rel="icon" href="images/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="images/android-chrome-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="images/android-chrome-512x512.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+    <script src="js/md5.min.js"></script>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease;
+        }
+        #container {
+            min-height: 100%;
+            padding-bottom: 60px;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease;
+        }
+        .search-results-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            text-align: left;
+            transition: all 0.3s ease;
+        }
+        .search-results-container h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            transition: color 0.3s ease;
+        }
+        .search-results-container a {
+            display: block;
+            margin-top: 10px;
+            text-decoration: none;
+            color: #337ab7;
+            transition: color 0.3s ease;
+        }
+        .search-results-container a:hover {
+            text-decoration: underline;
+        }
+        .search-container-forbidden {
+            border-color: #ff0000 !important;
+            background-color: #2a0a0a !important;
+        }
+        .search-container-forbidden h2,
+        .search-container-forbidden a,
+        .search-container-forbidden p:not(.hidden-text) {
+            color: #ff0000 !important;
+        }
+        .hidden-text-container {
+            margin: 10px 0;
+            text-align: center;
+        }
+        .hidden-text {
+            display: inline-block;
+            background-color: #000;
+            color: #000;
+            padding: 2px 4px;
+            cursor: text;
+            user-select: text;
+            transition: color 0.1s ease;
+        }
+        .hidden-text::selection {
+            color: #ff0000;
+            background-color: #333;
+        }
+        .visible-text {
+            display: inline-block;
+            color: #ff0000;
+            padding: 2px 4px;
+            text-align: center;
+        }
+        .body-forbidden {
+            background-color: #1b1c1d !important;
+        }
+        .container-forbidden {
+            background-color: #1a1b1c !important;
+        }
+        #logo img {
+            display: block !important;
+            width: 280px !important;
+            height: auto !important;
+            margin: 0 auto;
+            transition: opacity 0.3s ease;
+        }
+        footer {
+            position: relative;
+            z-index: 100;
+        }
+        .body-forbidden footer,
+        .body-forbidden footer small,
+        .body-forbidden footer .first-line,
+        .body-forbidden footer .second-line {
+            color: #666 !important;
+            background-color: transparent !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <header>
+            <h1 id="logo"><a href="index.html"><img src="images/logo_fuanfan.jpeg" alt="福安家常菜馆"></a></h1>
+            <div id="header-box"></div>
+        </header>
+        <div id="contents" class="contents-search-page">
+            <main>
+                <div class="search-results-container">
+                    <h2>搜索结果</h2>
+                    <div id="results-display"></div>
+                </div>
+            </main>
+        </div>
+    </div>
+    <footer>
+        <small>
+            <span class="first-line">本网站的内容为虚构游戏作品，与任何真实的人物、团体或事件无关</span>
+            <span class="second-line">Copyright&copy; Shiroki. All Rights Reserved.&nbsp;&nbsp;&nbsp;<span class="custom-date">-</span></span>
+        </small>
+    </footer>
+    <script src="js/md5.min.js"></script>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/jquery.inview.min.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // DOM元素
+        const urlParams = new URLSearchParams(window.location.search);
+        const query = urlParams.get('q');
+        const resultsDisplay = document.getElementById('results-display');
+        const searchContainer = document.querySelector('.search-results-container');
+        const body = document.body;
+        const container = document.getElementById('container');
+        const logoImg = document.querySelector('#logo img');
+        const searchTitle = document.querySelector('.search-results-container h2');
+        logoImg.src = "images/logo_fuanfan.jpeg";
+        logoImg.alt = "福安家常菜馆";
+        body.classList.remove('body-forbidden');
+        container.classList.remove('container-forbidden');
+        searchContainer.classList.remove('search-container-forbidden');
+
+        // 函数
+        function encode(str) {
+        str = str.trim().toLowerCase();
+        const hex = window.md5(str);
+        let bytes = [];
+        for (let i = 0; i < hex.length; i += 2) {
+        bytes.push(parseInt(hex.substr(i, 2), 16));
+        }
+        return btoa(String.fromCharCode.apply(null, bytes));
+        }
+        // 主逻辑
+        if (query) {
+        const lowerCaseQuery = query.trim().toLowerCase();
+        const encodedQuery = encode(query);
+
+            fetch('js/forbidden_keywords.json')
+            .then(res => res.json())
+            .then(forbiddenKeywords => {
+                let forbiddenConfig = null;
+                Object.keys(forbiddenKeywords).forEach(key => {
+                    if (forbiddenKeywords[key].keywords.includes(encodedQuery)) {
+                        forbiddenConfig = forbiddenKeywords[key];
+                    }
+                });
+
+                if (forbiddenConfig) {
+                    logoImg.src = "images/logo_secret.png";
+                    logoImg.alt = "福安家常菜馆（秘密模式）";
+                    body.classList.add('body-forbidden');
+                    container.classList.add('container-forbidden');
+                    searchContainer.classList.add('search-container-forbidden');
+                    searchTitle.textContent = "此文件已被禁止访问";
+                    const footerDate = document.querySelector('.custom-date');
+                    if (footerDate && forbiddenConfig.customDate) {
+                        footerDate.textContent = forbiddenConfig.customDate;
+                    }
+                    if (forbiddenConfig.hidden) {
+                        resultsDisplay.innerHTML = `
+                            <div class="hidden-text-container">
+                                <span class="hidden-text">${forbiddenConfig.text}</span>
+                            </div>
+                        `;
+                    } else {
+                        resultsDisplay.innerHTML = `
+                            <div class="hidden-text-container">
+                                <span class="visible-text">${forbiddenConfig.text}</span>
+                            </div>
+                        `;
+                    }
+                } else {
+                    fetch('js/encrypted_keywords.json')
+                    .then(res => res.json())
+                    .then(keywordsMap => {
+                        body.classList.remove('body-forbidden');
+                        container.classList.remove('container-forbidden');
+                        searchContainer.classList.remove('search-container-forbidden');
+                        searchTitle.textContent = "搜索结果";
+                        const results = keywordsMap[encodedQuery] || [];
+                        if (results.length > 0) {
+                            resultsDisplay.innerHTML = `
+                            <p>共有 <b>${results.length}</b> 项符合条件的结果：</p>
+                            ${results.map(r => `<a href="${r.url}" style="display:block;margin-top:10px;color:#337ab7;" target="_blank">${r.title}</a>`).join('')}
+                            `;
+                        } else {
+                            resultsDisplay.innerHTML = `<p>抱歉，没有找到与"<b>${query}</b>"相关的结果。</p>`;
+                        }
+                    });
+                }
+            });
+        } else {
+            searchTitle.textContent = "搜索结果";
+            resultsDisplay.innerHTML = "<p>请输入搜索关键字。</p>";
+        }
+    });
+    </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"c6fb522c6c194e39ba4e4b644de7216f","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
